@@ -1,35 +1,53 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import SearchBar from "./SearchBar"; // Importa el buscador
 
 export default function ListaPersonas({ personas }) {
-  // Estado para manejar la paginación
+  // Estado para manejar la búsqueda
+  const [personasFiltradas, setPersonasFiltradas] = useState(personas);
   const [paginaActual, setPaginaActual] = useState(1);
-  const personasPorPagina = 20; // Número de personas por página
-  const paginasVisibles = 5; // Número de botones de página visibles
-  const totalPersonas = personas.length; // Total de registros traídos
-  const totalPaginas = Math.ceil(totalPersonas / personasPorPagina); // Total de páginas
+  const personasPorPagina = 20;
+  const paginasVisibles = 5;
 
-  // Calcular el índice de la primera y última persona a mostrar
+  useEffect(() => {
+    setPersonasFiltradas(personas); // Inicializa con todas las personas
+  }, [personas]);
+
+  // Función para manejar la búsqueda
+  const handleSearch = (searchTerm) => {
+    const resultados = personas.filter((persona) => {
+      // Concatenar RunCuerpo y RunDigito
+      const runCompleto = `${persona.RunCuerpo}-${persona.RunDigito}`;
+      return runCompleto.includes(searchTerm); // Buscar por RUN completo
+    });
+    setPersonasFiltradas(resultados);
+    setPaginaActual(1); // Reseteamos a la primera página cuando se filtra
+  };
+
+  const totalPersonas = personasFiltradas.length;
+  const totalPaginas = Math.ceil(totalPersonas / personasPorPagina);
+
   const indiceUltimaPersona = paginaActual * personasPorPagina;
   const indicePrimeraPersona = indiceUltimaPersona - personasPorPagina;
-  const personasActuales = personas.slice(
+  const personasActuales = personasFiltradas.slice(
     indicePrimeraPersona,
     indiceUltimaPersona
   );
 
-  // Función para cambiar de página
   const cambiarPagina = (numeroPagina) => setPaginaActual(numeroPagina);
 
-  // Calcular el rango de páginas visibles (para mostrar solo un número limitado de botones)
   const inicioPagina = Math.max(
     1,
     paginaActual - Math.floor(paginasVisibles / 2)
   );
-  const finPagina = Math.min(totalPaginas, Math.max() + paginasVisibles - 1);
+  const finPagina = Math.min(totalPaginas, inicioPagina + paginasVisibles - 1);
 
   return (
     <div>
+      {/* Aquí añadimos el componente de búsqueda */}
+      <SearchBar onSearch={handleSearch} />
+
       <div className="flex flex-col">
         <div className="overflow-x-auto sm:-mx-6 lg:-mx-8">
           <div className="inline-block min-w-full py-2 sm:px-6 lg:px-8">
@@ -83,38 +101,35 @@ export default function ListaPersonas({ personas }) {
 
               {/* Botones de paginación */}
               <div className="flex justify-center mt-4">
-                {/* Botón de Página Anterior */}
                 <button
                   className="px-4 py-2 mx-1 bg-gray-200 rounded-md"
                   onClick={() => cambiarPagina(paginaActual - 1)}
-                  disabled={paginaActual === 1} // Desactivar si es la primera página
+                  disabled={paginaActual === 1}
                 >
                   Anterior
                 </button>
 
-                {/* Botones de número de página (solo mostrar un número limitado) */}
                 {Array.from(
-                  { length: finPagina - Math.max() + 1 },
+                  { length: finPagina - inicioPagina + 1 },
                   (_, index) => (
                     <button
-                      key={Math.max() + index}
+                      key={inicioPagina + index}
                       className={`px-4 py-2 mx-1 ${
-                        paginaActual === Math.max() + index
+                        paginaActual === inicioPagina + index
                           ? "bg-blue-500 text-white"
                           : "bg-gray-200"
                       }`}
-                      onClick={() => cambiarPagina(Math.max() + index)}
+                      onClick={() => cambiarPagina(inicioPagina + index)}
                     >
-                      {Math.max() + index}
+                      {inicioPagina + index}
                     </button>
                   )
                 )}
 
-                {/* Botón de Página Siguiente */}
                 <button
                   className="px-4 py-2 mx-1 bg-gray-200 rounded-md"
                   onClick={() => cambiarPagina(paginaActual + 1)}
-                  disabled={paginaActual === totalPaginas} // Desactivar si es la última página
+                  disabled={paginaActual === totalPaginas}
                 >
                   Siguiente
                 </button>
